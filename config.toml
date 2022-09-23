@@ -1,0 +1,53 @@
+baseURL = "http://rtarun9.github.io/"
+defaultContentLanguage = "en"
+languageCode = "en"
+
+title = "Tarun Ramaswamy"
+
+theme = "PaperMod"
+
+# Automatically generate robots.txt
+enableRobotsTXT = false
+
+[params.profileMode]
+enabled = true
+title = "Tarun Ramaswamy"
+subtitle = "Computer Science Student | Graphics Programmer"
+
+  [[params.profileMode.socialIcons]]
+  name = "twitter"
+  url = "https://github.com/rtarun9"
+
+
+
+  [[params.profileMode.buttons]]
+  name = "Github"
+  url = "https://github.com/rtarun9"
+
+
+[menu]
+  [[menu.main]]
+    # Unique identifier for a menu item
+    identifier = "projects"
+    weight = 2
+    url = "/posts/projects/"
+    # Display name
+    name = "Projects"
+
+    # Weights are used to determine the ordering
+    
+    [[menu.main]]
+    # Unique identifier for a menu item
+    identifier = "about"
+    url = "/posts/about/"
+    weight = 1
+    # Display name
+    name = "About"
+
+
+  [[menu.main]]
+    identifier = "github"
+    url = "https://github.com/rtarun9"
+    weight = 5
+    # We use feather-icons: https://feathericons.com/
+    pre = "<span data-feather='github'> Github</span>"
