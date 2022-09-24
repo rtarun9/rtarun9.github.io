@@ -2,6 +2,8 @@ baseURL = "http://rtarun9.github.io/"
 defaultContentLanguage = "en"
 languageCode = "en"
 
+enableEmoji = true
+
 title = "Tarun Ramaswamy"
 
 theme = "PaperMod"
@@ -9,21 +11,28 @@ theme = "PaperMod"
 # Automatically generate robots.txt
 enableRobotsTXT = false
 
+
 [params.profileMode]
 enabled = true
 title = "Tarun Ramaswamy"
+
 subtitle = "Computer Science Student | Graphics Programmer"
 
-  [[params.profileMode.socialIcons]]
-  name = "twitter"
-  url = "https://github.com/rtarun9"
+  [[params.socialIcons]]
+  name = "linkedin"
+  url = "https://www.linkedin.com/in/tarun-ramaswamy-931426200/"
 
-
-
-  [[params.profileMode.buttons]]
+  [[params.socialIcons]]
   name = "Github"
   url = "https://github.com/rtarun9"
 
+  [[params.socialIcons]]
+  name = "twitter"
+  url = "https://twitter.com/rtarun0"
+
+  [[params.socialIcons]]
+  name = "youtube"
+  url = "https://www.youtube.com/channel/UCXASE11l2Y94oFE86oX-T8w"
 
 [menu]
   [[menu.main]]
