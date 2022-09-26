@@ -1,0 +1,71 @@
+baseURL: 'http://rtarun9.github.io/'
+defaultContentLanguage: en
+languageCode: en
+enableEmoji: true
+title: Tarun Ramaswamy
+theme: PaperMod
+
+env: proeuction
+
+enableRobotsTXT: false
+
+params:
+  showToc: false
+  TocOpen: false
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  hideMeta: false
+
+  profileMode:
+    enabled: true
+    title: Tarun Ramaswamy
+    subtitle: Computer Science Student | Graphics Programmer
+  socialIcons:
+    - name: linkedin
+      url: 'https://www.linkedin.com/in/tarun-ramaswamy-931426200/'
+    - name: Github
+      url: 'https://github.com/rtarun9'
+    - name: Email
+      url: 'mailto:tarunramaswamy@outlook.com'
+    - name: cv
+      url: 'https://drive.google.com/file/d/13qP6zStXx4il5fX9YwT8uJdPm6YRoUMQ/view?usp=sharing'
+    - name: youtube
+      url: 'https://www.youtube.com/channel/UCXASE11l2Y94oFE86oX-T8w'
+    - name: twitter
+      url: 'https://twitter.com/rtarun0'
+hideDescriptionInList: false
+cover:
+  hiddenInList: false # hide on list pages and home
+  hiddenInSingle: false # hide on single page
+
+menu:
+  main:
+    - identifier: home
+      name: Home
+      url: /
+      weight: 1
+
+    - identifier: about
+      url: /about
+      weight: 2
+      name: About
+
+    - identifier: projects
+      weight: 3
+      url: /projects
+      name: Projects
+
+    - identifier: blogs
+      url: /blogs/
+      weight: 4
+      name: Blogs
+
+    - identifier: github
+      url: 'https://github.com/rtarun9'
+      weight: 5
+      pre: <span data-feather='github'> Github</span>
+
+    - identifier: youtube
+      url: 'https://www.youtube.com/channel/UCXASE11l2Y94oFE86oX-T8w'
+      weight: 5
+      pre: <span data-feather='youtube'> Youtube </span>
