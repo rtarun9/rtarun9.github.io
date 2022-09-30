@@ -110,7 +110,7 @@ float4 PsMain(VSOutput input) : SV_Target
     return environmentTexture.Sample(linearWrapSampler, samplingVector);
 }
 ```
-Not how all the indices are stored in a single constant buffer (called SkyBoxRenderResources). As this is a bunch of 32-bit root constants, setting them up on the C++ side is pretty easy :
+Note how all the indices are stored in a single constant buffer (called SkyBoxRenderResources). As this is a bunch of 32-bit root constants, setting them up on the C++ side is pretty easy :
 ```cpp
 // gfx::X::GetSrv/CbvIndex basically checks if the buffer is null : If so, it returns -1 (or 0XFFFF'FFFF). In the HLSL side, we can check if these values are -1 or not.
 // If they are, for debugging you can check return an arbitrary value such as float3(0.0f, 0.0f, 0.0f) and such.
