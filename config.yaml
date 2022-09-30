@@ -10,7 +10,7 @@ env: proeuction
 enableRobotsTXT: false
 
 params:
-  showToc: true
+  showToc: false
   TocOpen: false
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true

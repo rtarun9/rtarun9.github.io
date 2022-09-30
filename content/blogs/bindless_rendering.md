@@ -1,10 +1,13 @@
 ---
-title: "Bindless Rendering in DX12 and SM6.6"
+title: "Bindless Rendering in DirectX12 and SM6.6"
 draft: false
 comments: true
 date: 2022-09-30
+showtoc: true
 cover:
     image: "/images/DX12-logo.png"
+description: "Basic overview of Modern Bindless Rendering, with a focus on DX12 / HLSL."
+summary: "Basic overview of Modern Bindless Rendering, with a focus on DX12 / HLSL."
 ---
 
 
@@ -25,7 +28,7 @@ You will also need to specify additional flags in your root signature (`D3D12_RO
 Obviously, since you are indexing into descriptor heaps, you also need to set the heaps using the `ID3D12GraphicsCommandList::SetDescriptorHeaps` call. Be sure to do this for each command list!
 
 
-##Practical usage
+## Practical Example
 In my renderer [Helios](https://github.com/rtarun9/Helios), I have a Buffer/Texture struct, which stores an index (one for SRV, UAV, CBV, etc).
 
 
@@ -60,7 +63,7 @@ uint32_t Descriptor::GetDescriptorIndex(const DescriptorHandle& descriptorHandle
 
 
 Now, how exactly do we go about using bindless rendering ?
-Say you want to render a SkyBox. You would need a few resources for this : A position buffer (in this case I am using Vertex Pulling and not Vertex Buffer), a texture, and a view projection matrix (which I store in a SceneBuffer). The HLSL code for this can be found [here](https://github.com/rtarun9/Helios/blob/master/Shaders/SkyBox/SkyBox.hlsl), and in a nutshell is :
+Say you want to render a SkyBox. You would need a few resources for this : A position buffer (in this case I am using Vertex Pulling and not Vertex Buffer), a texture, and a view projection matrix (which I store in a SceneBuffer). The complete HLSL shader code for this can be found [here](https://github.com/rtarun9/Helios/blob/master/Shaders/SkyBox/SkyBox.hlsl):
 ```cpp
 struct SkyBoxRenderResources
 {
@@ -82,15 +85,12 @@ The Vertex and Pixel shader uses `ResourceDescriptorHeap` in this way :
 ```cpp
 ConstantBuffer<SkyBoxRenderResources> renderResource : register(b0);
 
-
 [RootSignature(BindlessRootSignature)]
 VSOutput VsMain(uint vertexID : SV_VertexID)
 {
     StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[renderResource.positionBufferIndex];
 
-
     ConstantBuffer<SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResource.sceneBufferIndex];
-
 
     VSOutput output;
     output.position = mul(float4(positionBuffer[vertexID], 0.0f), sceneBuffer.viewProjectionMatrix);
@@ -105,20 +105,15 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
 float4 PsMain(VSOutput input) : SV_Target
 {
     TextureCube environmentTexture = ResourceDescriptorHeap[renderResource.textureIndex];
-
-
     float3 samplingVector = normalize(input.modelSpacePosition.xyz);
-
 
     return environmentTexture.Sample(linearWrapSampler, samplingVector);
 }
 ```
 Not how all the indices are stored in a single constant buffer (called SkyBoxRenderResources). As this is a bunch of 32-bit root constants, setting them up on the C++ side is pretty easy :
 ```cpp
-
-
 // gfx::X::GetSrv/CbvIndex basically checks if the buffer is null : If so, it returns -1 (or 0XFFFF'FFFF). In the HLSL side, we can check if these values are -1 or not.
-// If they are, for debugging you can check return an arbitrary value such as float3(0.0f, 0.0f, 0.0f), etc.
+// If they are, for debugging you can check return an arbitrary value such as float3(0.0f, 0.0f, 0.0f) and such.
 SkyBoxRenderResources skyBoxRenderResources
 {
     .positionBufferIndex = gfx::Buffer::GetSrvIndex(mPositionBuffer.get()),
@@ -201,8 +196,6 @@ for (uint32_t i : std::views::iota(0u, shaderDesc.BoundResources))
             }
         };
 
-
-
         outShaderReflection.rootParameters.emplace_back(rootParameter);
     }
 }
@@ -216,6 +209,10 @@ commandList->SetGraphicsRootConstantBufferView(mShaderReflection.rootParameterMa
 ```
 Not as convenient as going completely bindless, but better than the traditional 'bindfull' model :sparkling_heart:.
 
+## Closing Thoughts
+Bindless Rendering in my opinion is great for simplifying the complex binding model of DX12, while also making changes to shaders / bound resources much more easier. For example, With `SamplerDescriptorHeap`, you don't need to worry if a particular texture requires a wrap / clamp filter and such, which could be a issue when sampling from normal map's (granted your GLTF models have specified sampler settings and you use a GLTF loader such as TinyGLTF which makes retrieving sampler information a breeze).
+
+Thank you so much for your time ! Feel free to leave comments if you felt something was lacking / incorrect or your opinions on my first post! If you would like to reach out to me, head over to the Home page to find some contact links there.
 
 ## More detailed resources
 If you want to go deeper into bindless rendering, here are some resources I have found to be really helpful : \
