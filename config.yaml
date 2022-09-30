@@ -10,12 +10,11 @@ env: proeuction
 enableRobotsTXT: false
 
 params:
-  showToc: false
+  showToc: true
   TocOpen: false
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true
   hideMeta: false
-
   profileMode:
     enabled: true
     title: Tarun Ramaswamy
