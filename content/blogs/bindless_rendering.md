@@ -8,7 +8,7 @@ cover:
 ---
 
 
-##Why go bindless ?
+## Why go bindless ?
 If you have used the traditional binding model, you are probably familiar with the pain of setting up your root parameters, calling `ID3D12GraphicsCommandList::SetGraphicsRootDescriptorTable`or `ID3D12GraphicsCommandList::SetGraphicsRootConstantBufferView` and end up setting the wrong root parameter index and such. Basically, modifying your bound resources even a little can cause a lot of hassle. In Bindless rendering, however, we can bind resources with just an index, and place all of these indices in a RootConstant (i.e a group of constants that can be bound directly to the shader :heart_eyes:. Moreover, you could use the same root signature for all of your pipelines (Graphics and Compute :smile:).
 
 
