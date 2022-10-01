@@ -248,6 +248,7 @@ Thank you so much for your time! Feel free to leave comments if you felt somethi
 
 ## More Detailed Resources
 If you want to go deeper into bindless rendering, here are some resources I have found to be really helpful: \
+[Matt Pettineo's Bindless Rendering article in Ray Tracing Gems II (chapter 17)](http://www.realtimerendering.com/raytracinggems/rtg2/index.html).\
 [Traverse Research -> Bindless Rendering Series by Darius Bouma](https://blog.traverseresearch.nl/bindless-rendering-setup-afeb678d77fc). \
 [Wicked Engine's DevBlog on Bindless Descriptors by Turanszki J](https://wickedengine.net/2021/04/06/bindless-descriptors/). \
 [Alex Tardif's post on Bindless Rendering](https://alextardif.com/Bindless.html). \
