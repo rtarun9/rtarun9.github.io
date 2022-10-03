@@ -7,8 +7,12 @@ theme: PaperMod
 
 env: production
 
-enableRobotsTXT: false
+enableRobotsTXT: true
 
+sitemap:
+  changefreq: Weekly
+  priority: 0.5
+  
 params:
   showToc: false
   TocOpen: false

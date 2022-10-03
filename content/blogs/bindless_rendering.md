@@ -43,19 +43,19 @@ In my renderer [Helios](https://github.com/rtarun9/Helios), I have a Buffer/Text
 
 ```cpp
 struct Buffer
-{  
-    /* .. some functions / variables .. */
-    uint32_t srvIndex{};
-    uint32_t uavIndex{};
-    uint32_t cbvIndex{};
+{  
+    /* .. some functions / variables .. */
+    uint32_t srvIndex{};
+    uint32_t uavIndex{};
+    uint32_t cbvIndex{};
 };
 
 
 struct Texture
 {
-    /* .. some functions / variables .. */
-    uint32_t srvIndex{};
-    uint32_t uavIndex{};
+    /* .. some functions / variables .. */
+    uint32_t srvIndex{};
+    uint32_t uavIndex{};
 };
 ```
 
@@ -64,7 +64,7 @@ You could modify your DescriptorHeap abstraction to keep track of the current in
 ```cpp
 uint32_t Descriptor::GetDescriptorIndex(const DescriptorHandle& descriptorHandle) const
 {
-        return static_cast<uint32_t>((descriptorHandle.gpuDescriptorHandle.ptr - mDescriptorHandleFromStart.gpuDescriptorHandle.ptr) / mDescriptorSize);
+        return static_cast<uint32_t>((descriptorHandle.gpuDescriptorHandle.ptr - mDescriptorHandleFromStart.gpuDescriptorHandle.ptr) / mDescriptorSize);
 }
 ```
 
@@ -74,16 +74,16 @@ Say you want to render a SkyBox. You would need a few resources for this: A posi
 ```cpp
 struct SkyBoxRenderResources
 {
-    uint positionBufferIndex;
-    uint sceneBufferIndex;
-    uint textureIndex;
+    uint positionBufferIndex;
+    uint sceneBufferIndex;
+    uint textureIndex;
 };
 
 
 ConstantBufferStruct SceneBuffer
 {
-    /* .. Other stuff .. */
-    float4x4 viewProjectionMatrix;
+    /* .. Other stuff .. */
+    float4x4 viewProjectionMatrix;
 };
 ```
 
@@ -94,23 +94,23 @@ ConstantBuffer<SkyBoxRenderResources> renderResource : register(b0);
 [RootSignature(BindlessRootSignature)]
 VSOutput VsMain(uint vertexID : SV_VertexID)
 {
-    StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[renderResource.positionBufferIndex];
-    ConstantBuffer<SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResource.sceneBufferIndex];
+    StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[renderResource.positionBufferIndex];
+    ConstantBuffer<SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResource.sceneBufferIndex];
 
-    VSOutput output;
-    output.position = mul(float4(positionBuffer[vertexID], 0.0f), sceneBuffer.viewProjectionMatrix);
-    output.modelSpacePosition = float4(positionBuffer[vertexID].xyz, 0.0f);
-    output.position = output.position.xyww;
+    VSOutput output;
+    output.position = mul(float4(positionBuffer[vertexID], 0.0f), sceneBuffer.viewProjectionMatrix);
+    output.modelSpacePosition = float4(positionBuffer[vertexID].xyz, 0.0f);
+    output.position = output.position.xyww;
 
-    return output;
+    return output;
 }
 
 float4 PsMain(VSOutput input) : SV_Target
 {
-    TextureCube environmentTexture = ResourceDescriptorHeap[renderResource.textureIndex];
-    float3 samplingVector = normalize(input.modelSpacePosition.xyz);
+    TextureCube environmentTexture = ResourceDescriptorHeap[renderResource.textureIndex];
+    float3 samplingVector = normalize(input.modelSpacePosition.xyz);
 
-    return environmentTexture.Sample(linearWrapSampler, samplingVector);
+    return environmentTexture.Sample(linearWrapSampler, samplingVector);
 }
 ```
 Note how all the indices are stored in a single constant buffer (called SkyBoxRenderResources). As this is a bunch of 32-bit root constants, setting them up on the C++ side is pretty easy:
@@ -119,9 +119,9 @@ Note how all the indices are stored in a single constant buffer (called SkyBoxRe
 // If they are, for debugging you can check return an arbitrary value such as float3(0.0f, 0.0f, 0.0f) and such.
 SkyBoxRenderResources skyBoxRenderResources
 {
-    .positionBufferIndex = gfx::Buffer::GetSrvIndex(mPositionBuffer.get()),
-    .sceneBufferIndex = gfx::Buffer::GetCbvIndex(mSceneBuffer.get()),
-    .textureIndex = gfx::Texture::GetSrvIndex(mSkyBoxTexture.get());
+    .positionBufferIndex = gfx::Buffer::GetSrvIndex(mPositionBuffer.get()),
+    .sceneBufferIndex = gfx::Buffer::GetCbvIndex(mSceneBuffer.get()),
+    .textureIndex = gfx::Texture::GetSrvIndex(mSkyBoxTexture.get());
 };
 
 // Don't forget to set your descriptor heaps!
@@ -132,6 +132,9 @@ std::array<ID3D12DescriptorHeap* const, 2u> descriptorHeaps
 };
 
 commandList->SetDescriptorHeaps(static_cast<uint32_t>(descriptorHeaps.size()), descriptorHeaps.data());
+
+// Note:exclamation:: You must set the Graphics / Compute root signature only *after* setting your descriptor heaps, as the correct heap pointers must be available when root signature is set.
+commandList->SetGraphicsRootSignature(mRootSignature.Get());
 
 // Yup, setting up these constants is that easy :heart_eyes:
 commandList->SetGraphicsRoot32BitConstants(0u, 3u, reinterpret_cast<void*>(&skyBoxRenderResources), 0u);
@@ -153,6 +156,7 @@ I've personally found that in RenderDoc, if you know the name of the resources b
 ![](/images/NsightHeapEntry.png)
 In Nsight, you can view the contents of your descriptor heap along with their indices in the 'Descriptor Heap view'), making debugging convenient.
 
+On a side note, if you ever find your application running correctly with / without the visual studio debugger but get a blank render target output while running through RenderDoc / Nsight, have a check if you set the descriptor heaps *before* settings your root signature!
 
 ## Performance Considerations
 > Note:exclamation:: If performance is critical, profile your code using various techniques to see what is optimal.
@@ -167,49 +171,56 @@ In my new renderer, [NetherEngine](https://github.com/rtarun9/NetherEngine/), th
 
 
 ```cpp
+Microsoft::WRL::ComPtr<ID3D12ShaderReflection> shaderReflection{};
+mUtils->CreateReflection(&reflectionBuffer, IID_PPV_ARGS(&shaderReflection));
+D3D12_SHADER_DESC shaderDesc{};
+shaderReflection->GetDesc(&shaderDesc);
+
+// Get root parameters from shader reflection data.
+outShaderReflection.rootParameters.reserve(shaderDesc.BoundResources);
 for (uint32_t i : std::views::iota(0u, shaderDesc.BoundResources))
 {
-    D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{};
-    ThrowIfFailed(shaderReflection->GetResourceBindingDesc(i, &shaderInputBindDesc));
+    D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{};
+    ThrowIfFailed(shaderReflection->GetResourceBindingDesc(i, &shaderInputBindDesc));
 
-    // A map of wstrings to uint32_t's : So that you don't need to manually set root parameter index in the ID3D12GraphicsCommandList::SetGraphicsRootConstantBufferView call.```
-    outShaderReflection.rootParameterMap[StringToWString(shaderInputBindDesc.Name)] = i;
+    // A map of wstrings to uint32_t's : So that you don't need to manually set root parameter index in the ID3D12GraphicsCommandList::SetGraphicsRootConstantBufferView call.```
+    outShaderReflection.rootParameterMap[StringToWString(shaderInputBindDesc.Name)] = i;
 
-    ID3D12ShaderReflectionConstantBuffer* shaderReflectionConstantBuffer = shaderReflection->GetConstantBufferByIndex(i);
-    D3D12_SHADER_BUFFER_DESC constantBufferDesc{};
-    shaderReflectionConstantBuffer->GetDesc(&constantBufferDesc);
+    ID3D12ShaderReflectionConstantBuffer* shaderReflectionConstantBuffer = shaderReflection->GetConstantBufferByIndex(i);
+    D3D12_SHADER_BUFFER_DESC constantBufferDesc{};
+    shaderReflectionConstantBuffer->GetDesc(&constantBufferDesc);
 
-    // Each shader will have a RenderResources struct at register b0.
-    if (shaderInputBindDesc.BindPoint == 0u)
-    {
-        const D3D12_ROOT_PARAMETER1 rootParameter
-        {
-            .ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS,
-            .Constants
-            {
-                .ShaderRegister = shaderInputBindDesc.BindPoint,
-                .RegisterSpace = shaderInputBindDesc.Space,
-                .Num32BitValues = constantBufferDesc.Size / 8
-            }
-        };
+    // Each shader will have a RenderResources struct at register b0.
+    if (shaderInputBindDesc.BindPoint == 0u)
+    {
+        const D3D12_ROOT_PARAMETER1 rootParameter
+        {
+            .ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS,
+            .Constants
+            {
+                .ShaderRegister = shaderInputBindDesc.BindPoint,
+                .RegisterSpace = shaderInputBindDesc.Space,
+                .Num32BitValues = constantBufferDesc.Size / 8
+            }
+        };
 
-        outShaderReflection.rootParameters.emplace_back(rootParameter);
-    }
-    else if (shaderInputBindDesc.Type == D3D_SIT_CBUFFER && shaderInputBindDesc.BindPoint != 0)
-    {
-        const D3D12_ROOT_PARAMETER1 rootParameter
-        {
-            .ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV,
-            .Descriptor
-            {
-                .ShaderRegister = shaderInputBindDesc.BindPoint,
-                .RegisterSpace = shaderInputBindDesc.Space,
-                .Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
-            }
-        };
+        outShaderReflection.rootParameters.emplace_back(rootParameter);
+    }
+    else if (shaderInputBindDesc.Type == D3D_SIT_CBUFFER && shaderInputBindDesc.BindPoint != 0)
+    {
+        const D3D12_ROOT_PARAMETER1 rootParameter
+        {
+            .ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV,
+            .Descriptor
+            {
+                .ShaderRegister = shaderInputBindDesc.BindPoint,
+                .RegisterSpace = shaderInputBindDesc.Space,
+                .Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
+            }
+        };
 
-        outShaderReflection.rootParameters.emplace_back(rootParameter);
-    }
+        outShaderReflection.rootParameters.emplace_back(rootParameter);
+    }
 }
 
 // Now, in some other file where the RS and PSO are being created....
@@ -253,5 +264,5 @@ If you want to go deeper into bindless rendering, here are some resources I have
 [Wicked Engine's DevBlog on Bindless Descriptors by Turanszki J](https://wickedengine.net/2021/04/06/bindless-descriptors/). \
 [Alex Tardif's post on Bindless Rendering](https://alextardif.com/Bindless.html). \
 [Game Engine Series's video on Low Level Materials and incorporating SM6.6's Dynamic Resources](https://www.youtube.com/watch?v=JItxsGsc9pI). \
-[Vertex Pulling Benchmarks across hardware](https://docs.google.com/spreadsheets/d/15-V9RFoxj21PoMrfOyVLAMRN0ekejt6iiimWxyThDvk/edit#gid=0).
-
+[Vertex Pulling Benchmarks across hardware](https://docs.google.com/spreadsheets/d/15-V9RFoxj21PoMrfOyVLAMRN0ekejt6iiimWxyThDvk/edit#gid=0). \
+[Official documentation on HLSL's Dynamic Resources](https://github.com/microsoft/DirectX-Specs/blob/master/d3d/HLSL_SM_6_6_DynamicResources.md).
