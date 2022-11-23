@@ -9,8 +9,8 @@ tocopen: true
 tags: ["C++", "DirectX Shader Compiler", "DXC", "HLSL", "Shader Reflection"]
 cover:
     image: "/images/HLSLReflection.png"
-description: "Basic overview of simplying root signature creation using the DirectX Shader Compiler for Shader Reflection and Compilation."
-summary: "Basic overview of simplying root signature creation using the DirectX Shader Compiler for Shader Reflection and Compilation."
+description: "Basic overview of simplifying root signature creation using the DirectX Shader Compiler for Shader Reflection and Compilation."
+summary: "Basic overview of simplifying root signature creation using the DirectX Shader Compiler for Shader Reflection and Compilation."
 ---
 
 > Note:exclamation:: If you are considering using Shader Reflection to simplify the root signature creation process (as well as your resource binding system), you might want to have a look at Bindless Rendering as well. I have a blog post on bindless rendering which you can find [here.](https://rtarun9.github.io/blogs/bindless_rendering/)
