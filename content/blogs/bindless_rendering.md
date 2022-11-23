@@ -3,6 +3,7 @@ title: "Bindless Rendering in DirectX12 and SM6.6"
 draft: false
 comments: true
 date: 2022-09-30
+weight: 1   
 showtoc: true
 tocopen: true
 tags: ["C++", "DirectX12", "Bindless Rendering"]

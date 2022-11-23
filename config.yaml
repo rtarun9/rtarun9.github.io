@@ -33,11 +33,13 @@ params:
     - name: youtube
       url: 'https://www.youtube.com/channel/UCXASE11l2Y94oFE86oX-T8w'
     - name: twitter
-      url: 'https://twitter.com/rtarun0'
+      url: 'https://twitter.com/rtarun0'  
+  cover:
+    hiddenInList: true # hide on list pages and home
+    hiddenInSingle: false # hide on single page
+    responsiveImages: false
+
 hideDescriptionInList: false
-cover:
-  hiddenInList: false # hide on list pages and home
-  hiddenInSingle: false # hide on single page
 
 menu:
   main:
