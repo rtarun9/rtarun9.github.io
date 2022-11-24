@@ -168,7 +168,7 @@ If you are targeting post - turing Nvidia hardware, however, this may not be an 
 
 One alternative is to have a different root signature for each pipeline, where you have a RenderResources struct for your SRV / UAV / Sampler's descriptor heap indices, and use `Inline Constant Buffer Root Descriptors` for your constant buffers. For convenience, you could use Shader Reflection to make the process of setting up root parameters easy and automated.
 
-In my new renderer, [NetherEngine](https://github.com/rtarun9/NetherEngine/), this is exactly what I do, using the DXC C++ Api for shader compilation and reflection:
+We can use the DirectX Shader Compiler for reflection to simplify root signature creation as follows : 
 
 
 ```cpp
@@ -239,6 +239,7 @@ const D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc
     }
 };
 ```
+You can check out my blog on shader reflection to learn more on how to setup DXC [here.](https://rtarun9.github.io/blogs/shader_reflection/)
 
 Binding your resources in this model boils down to:
 ```cpp

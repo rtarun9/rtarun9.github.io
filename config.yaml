@@ -36,7 +36,7 @@ params:
       url: 'https://twitter.com/rtarun0'  
 
   cover:
-    hiddenInList: true # hide on list pages and home
+    hiddenInList: false # hide on list pages and home
     hiddenInSingle: false # hide on single page
     responsiveImages: false
 
