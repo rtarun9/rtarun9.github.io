@@ -60,10 +60,9 @@ menu:
       name: Projects
 
     - identifier: blogs
-      url: /blogs
+      url: /blogs/
       weight: 4
       name: Blogs
-      layout: "archives"
 
     - identifier: github
       url: 'https://github.com/rtarun9'
