@@ -4,6 +4,9 @@ draft: false
 weight: 3
 cover:
     image: "/images/cpt.png"
+
+description: "A simple compute shader based path tracer using HLSL and Direct3D."
+summary: "A simple compute shader based path tracer using HLSL and Direct3D."
 ---
 # ComputePathTracer : C++ / DX11 Renderer 
 > Github repo : https://github.com/rtarun9/ComputePathTracer/

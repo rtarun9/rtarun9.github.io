@@ -4,6 +4,8 @@ draft: false
 weight: 1
 cover:
     image: "/images/IBL1.png"
+description: "DirectX12 Graphics renderer featuring rendering techniques such as PBR / IBL, Shadow Mapping, Deferred Shading, etc."
+summary: "DirectX12 Graphics renderer featuring rendering techniques such as PBR / IBL, Shadow Mapping, Deferred Shading, etc."
 ---
 
 # Helios : C++ / DX12 Renderer 
