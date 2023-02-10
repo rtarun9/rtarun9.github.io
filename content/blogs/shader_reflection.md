@@ -4,7 +4,7 @@ draft: false
 comments: true
 date: 2022-11-23
 showtoc: true
-weight: 2
+weight: 3
 tocopen: true
 tags: ["C++", "DirectX Shader Compiler", "DXC", "HLSL", "Shader Reflection"]
 cover:

@@ -3,7 +3,7 @@ title: "Deferred Shading"
 draft: false
 comments: true
 date: 2022-12-24
-weight: 3
+weight: 4
 showtoc: true
 tocopen: true
 tags: ["C++", "Shading", "Rendering Techniques"]
@@ -222,7 +222,7 @@ Deferred shading is a really simple rendering technique that gives you the capab
 There are a few notable disadvantages of using this technique, but in most cases, these can easily be overcome (as evident from the fact that despite the cons, deferred shading is THE standard/goto rendering method used by Games and Engines all over the world).
 
 
-Thank you so much for your time! Feel free to leave comments if you felt something was lacking/incorrect or your opinions on my first post! If you would like to reach out to me, head over to the [Home page](/) to find some contact links there.
+Thank you so much for your time! Feel free to leave comments if you felt something was lacking/incorrect or your opinions on my post! If you would like to reach out to me, head over to the [Home page](/) to find some contact links there.
 
 ## More Detailed Resources
 If you want to go deeper into deferred rendering, here are some resources I have found to be very helpful: \

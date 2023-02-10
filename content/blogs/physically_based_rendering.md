@@ -1,0 +1,202 @@
+---
+title: "[Work In Progress] Notes on Physically Based Rendering"
+draft: false
+comments: true
+date: 2023-10-2
+weight: 2
+showtoc: true
+tocopen: true
+tags: ["C++", "Shading", "Rendering Techniques", "Materials"]
+cover:
+    image: "/images/pbr/pbr_sphere.png"
+description: "Explanation of physically based rendering."
+summary: "Explanation of PBR with implementation and theory."
+---
+
+
+# What is Physically Based Rendering?
+PBR (Physically Based Rendering) is a collection of rendering techniques that aims to mimic / roughly approximate how light and material interactions occur in the real world. This is crucial if we wish to make our renderers render objects such that look 'realistic accurate'.
+
+It also provides a 'industry standard' for the way materials are authored, something that is not really possible with Non - PBR materials or non realistic shading models, since these the materials designed around these models are often created *for* certain environments, and switching the environment may cause materials to look 'wrong' or 'out of place'.
+
+In a nutshell, switching to a PBR model leads to more realistic looking materials (that look good independent of the scene / environment conditions), and provides a standard for artist to create materials.
+Before diving into what requirements are to be met to call a renderer as 'PBR renderer', lets have a glance at the reflectance equation.
+
+# The reflectance equation
+It is used to calculate the radiance (amount of observed energy over a solid angle of radiant intensity). Can be broken done to the observed energy of a light source, which is not always equal to the actual energy emmited by the light source, and is often scaled by a few factors.
+The equation is given by : 
+```cpp
+Lo(p, wo) = [integral over hemisphere centered at point p] {fr(p, wi, wo, a) * Li(p, wi) * (n.wi)} dwi
+// Where, Lo : Sum of reflected radiance for a point p, for a incoming light direction wi, and view direction wo.
+// The integral is over the hemisphere centered at point p on the surface.
+// fr(p, wi, wo, a) is the physically based BRDF, with 'a' as the roughness parameter
+// Li(p, wi) is the radiance of point p for small solid angle wi (i.e approximated to the incoming light direction).
+// n.wi is the geometry term (similar to the diffuse term in Phong shading : dictates the directional impact of the light source over a surface).
+```
+![](/images/pbr/reflectance_equation.png)
+
+There is a few things we can break down : In most cases, we can replace the scary integral by a summation, where we 'sum' over all the incoming light directions from all the lights. If you are using a deferred renderer, this can help performance since the PBR rendering computations are fairly complex compared to non PBR models such as Blinn-Phong.
+
+Also, note that the geometry term is non included in the reflectance equation itself. This is why the diffuse term of the BRDF does not involve dot product of normal and incoming light direction, and also why the specular term involves division by this term.
+
+Emissive properties are independent of the view / light direction, and often are not accounted for in energy conservation.
+
+
+With the knowledge of the reflectance equation, we can finally get started with the theory behind Physically Based Rendering :rocket:.
+
+
+# Requirements for a PBR renderer
+PBR is not a set of strict rules that a renderer must follow to be considered as 'PBR'. It is more of a series of guidlines, which by following we can increase realism of our scenes since we mimic the physics of light in the real world. The conditions a renderer must meet to be considered as PBR is :  \
+(i) Microfacet model. \
+(ii) Energy conservation should be followed. \
+(iiI) Physically based BRDF must be used. 
+
+
+## Microfacet Model
+Since we do not care about extremely minute irregularities on the surface, we assume that any irregularities that is smaller / close to the wavelenght of light (i.e the distance between two wave peaks) does not exist. At the microscopic scale, all surfaces could be described as a series of perfectly reflective mirrors, with varying surface normal orientations. 
+If the light and view direction are oriented such that the half way vector is perfectly aligned with the microfacet normal, the energy from that light direction would be reflected in the view direction. Otherwise, that particular light ray would have no contribution for the specified view direction.
+
+![](/images/pbr/smooth_vs_rough_microfacet.png)
+
+In the image, you can see that more rough the surface, more random the microfacet normal orientation is, and the more random the reflected rays are. This is what leads to the large specular reflections (which are weak and heavily blurred). On the other hand, the reflected rays from the smooth surface are roughly aligned towards the same direction, since the microfacet normals tend to be oriented roughly at same direction. This gives rise to sharp yet small reflections.
+
+![](/images/pbr/smooth_surface.png)
+This is a smooth surface with a roughness factor of 0.173 and metallic factor of 0.428. Notice the strong specular highlight which is fairly sharp and concentrated in a particular region.
+
+![](/images/pbr/rough_surface.png)
+This is a rough surface with a roughness factor of 0.673 and metallic factor of 0.428. Notice that the specular reflection is spread out over a wide area, because the microfacets are chaotically aligned. The reflection is not concentrated in a region and are weaker than the once in smooth surface.
+
+## Energy Conservation
+Enery is never magically 'lost' or 'gained'. The incoming light energy in PBR must equal to the outgoing enery (light energy due to reflection) plus energy lost due to internal scattering due to refraction, which is often converted in the form of heat. 
+
+When a rough surface exhibits specular reflections, we see that more and more rough a surface gets, the surfact has a large reflection shape combined with low intensity, when compared to smooth surfaces where the intensity of specular reflection is very high, but the reflection shape is small. This can be seen in the images in the above section as well.
+
+Light does not just reflect. A portion of light will also be refracted into the surface and either absorbed by the surface entirely, where the enery gets lost in the form of heat or total internal reflection, or it may scatter interally and refract out of the surface with lower energy (as some energy is lost when the light ray scatters internally). This is called subsurface scattering and will not be covered in this blog posts. We are only concerned with the light rays which get absorped and refract out of the surface within a very close range to the initial point of contact to the surface.
+![](/images/pbr/scattering.png)
+In the image, one of the light rays gets refracted into the surface, scatters internally, and refracts out at a close proximity to the point of entry. On the otherhand, the outgoing refracted ray that is marked with X leaves the surface too far from point of entry, and we ignore this.
+
+The metallic property of a surface dictates what proportion of incoming light rays are reflected, and what proportion are absorbed. Metals typically have no absorption and only reflect light. This changes as materials become more non metallic. Light that gets absorbed and scattered within close proximity to the point of entering the surface contributes to the diffuse color.
+
+Now, coming to energy conservation, if some light ray gets reflection, it will not be absorbed. The remaining light rays which are not reflected will get absorbed. That is, reflection and absorbtion are mutally exclusion, If a% of the rays get reflection, (100 - a%) of rays get refracted. This ensures that energy is conserved at all times, and is often ignored in non PBR shading models such as Blinn Phong or Gouch.
+
+## Physically Based BRDF
+What is a BRDF? 
+It stands for the Bi Directional Reflectance Function. It is a four dimensional function which takes as input parameters the incoming light direction, outgoing view direction, surface normal, and the surface roughness parameter. It basically computes the contribution of a individual incoming light ray to the outgoing reflection ray, which governs the material appearance. the BRDF will use the energy conservation theory and microfacet model to approximate the reflected and refractive properties of a material (i.e the diffuse and specular part).
+
+Since most real time PBR renderers use the cook torrence BRDF, lets look at that:
+```cpp
+f(cook_torrence) = kD * f(Diffuse) + kS + f(Specular)
+// Here, kD : Proportion of light rays that get refracted, scattered and refract out of the surface.
+//       kS : Proportion of light that is reflected, and is also 1.0 - kD.
+//       fDiffuse : Diffuse term of Cook torrence BRDF
+//       fSpecular : The specular term of Cook torrence BRDF
+```
+
+### Diffuse Term
+The cook torrence BRDF uses the lambertian diffuse model with is just : 
+```cpp
+f(Lambert) = albedoColor / PI
+```
+Since the BRDF is scaled by PI, we divide albedoColor by PI to cancel out the effect. Also, the geometry term in other shading models (i.e normal . incoming light direction) is moved out of BRDF to the reflectance equation. 
+
+### Specular Term
+The specular term of the Cook Torrence BRDF is a bit more involved. It is given by the following equation : 
+```cpp
+f(Specular) = ((NDF) * F * G) / (4 (wi.n) (wo.n))
+Where, NDF : Normal Distribution Function.
+       F   : Fresnel equation.
+       G   : Geometry shadowing / Masking function.
+       wi  : Incoming light direction.
+       wo  : View direction.
+       n   : Surface normal.
+```
+
+#### Normal Distribution Function
+[D] Statistically approximates the number of microfacets that are oriented exactly to the half way vector, based on the surface roughness, microfacet local normal, and the halfway vector. More rough the surface, larger the number of micofacets with normal perfectly aligned with the halfway vector will be and vice-versa.
+
+Here is an example of the GGX TrowBridge Reitx Model
+
+```cpp
+// Approximates the number of microfacts on the surface whose local normals are aligned with the half way vector. For light to reflect from the surface (diffuse or specular)
+// and reach our camera, the normal and halfway vector have to be aligned. More rough a surface is, more chaotically aligned the surface normals will be, producing large and dim highlights, while very smooth surfaces
+// will produce very sharp and bright highlights since majority of microfacet normals are aligned to half way vector.
+// This is the GGX TrowBridge Reitx model.
+float NormalDistribution(float3 normal, float3 halfWayVector, float roughnessFactor)
+{
+    float alpha = roughnessFactor * roughnessFactor;
+    float alphaSquare = alpha * alpha;
+
+    float nDotH = saturate(dot(normal, halfWayVector));
+    
+    return alphaSquare / (max(PI * pow((nDotH * nDotH * (alphaSquare - 1.0f) + 1.0f), 2.0f), MIN_FLOAT_VALUE));
+}
+```
+
+#### Fresnel Equation
+Approximate the proportion of light rays that get reflected for a particular surface, given the half way vector and view direction. This ratio varies drastically based on the angle we look at the surface.
+When we look at a surface head on, what we observe is the base reflectivity. When looking at parts of the surface at a grazing angle, the reflection becomes a lot more prevalant. Light is fully reflected form *any* surface at such grazing angles.
+
+This approximation, however is more for non metallic surfaces, since metallic surfaces will never 'absorb' light rays and fully reflect them. Metals, also have a tinted surface reflectivity which often gives metals thier distinct color. 
+
+To handle both metals and non metals, we consider a purely non metallic surface to have base reflectivity of (0.04, 0.04, 0.04). We lerp between this non metallic base reflectivity and the albedo color based on the metallic factor of the surface.
+
+Here is the Fresnel shclick appromixation:
+
+```cpp
+float3 FresnelSchlickApproximation(float vDotH, float3 f0)
+{
+    return f0 + (1.0f - f0) * pow(clamp(1.0f - vDotH, 0.0f, 1.0f), 5.0f);
+}
+
+// f0 is computed by : 
+float3 BaseReflectivity(const float3 albedo, const float metallicFactor)
+{
+    return lerp(float3(0.04, 0.04, 0.04), albedo, metallicFactor);
+}
+
+```
+#### Geometry Shadowing / Masking function.
+![](/images/pbr/geometry_shadowing.png)
+Determines the number of microfacets that get shadowed or masked by other microfacets. More the roughness of a surface, the more probable these effects can be.
+In our implementation, we actually use the same function to compute both the shadowing and self masking values. This is done due to Smiths method. 
+The SchickBeckMann function is passed in the surface normal, roughness factor, and X. If X is the light direction, it computes self shadowing, and if X is view direction, it computes masking.
+
+```cpp
+// Geometry function : approximates the number / relative surface area of the surface which is actually visible to us.
+// If the surface is rough, several microfacets could overshadow and block others, because of which the light reaching us will be occluded.
+// Using Smith's method, by changing the angle, we can approximate both self shadowing and geometry obstruction.
+// Source :https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
+// if x is viewDirection, then we are calculating geometric obstruction, and if light direction, we are calculating self shadowing.
+float SchlickBeckmannGS(float3 normal, float3 x, float roughnessFactor)
+{
+    float k = roughnessFactor / 2.0f;
+    float nDotX = saturate(dot(normal, x));
+    
+    return nDotX / (max((nDotX * (1.0f - k) + k), MIN_FLOAT_VALUE));
+}
+
+// Smiths method is used for approximation of geometry (both self shadowing and geometry obstruction). (ShlickGGX model).
+// Uses SchlickBeckman formula to calculate both geometry obstruction, where the camera cannot see a point as some other microfacet is blocking it, or
+// Self shadowing, where the light ray from a point is not able to reach the camera.
+float GeometryShadowingFunction(float3 normal, float3 viewDirection, float3 lightDirection, float roughnessFactor)
+{
+    return SchlickBeckmannGS(normal, viewDirection, roughnessFactor) * SchlickBeckmannGS(normal, lightDirection, roughnessFactor);    
+}
+```
+
+
+
+## Closing Thoughts
+PBR finally offers a standardized solution to artist (and graphics programmers) to obtain realistic materials and renders. Note that PBR isnt a strict set of rules, but more of a guidline
+which may be broken in a few situations.
+
+If you wish to learn more about PBR (since it is a pretty big topic), feel free to check the resources linked below.
+
+Thank you so much for your time! Feel free to leave comments if you felt something was lacking/incorrect or your opinions on my post! If you would like to reach out to me, head over to the [Home page](/) to find some contact links there.
+
+## More Detailed Resources
+If you want to go deeper into PBR, here are some resources I have found to be very helpful: \
+[Learn OpenGL's PBR Chapter](https://learnopengl.com/PBR/Theory).\
+[Physics and Math of Shading | SIGGRAPH Course by Naty Hoffman](https://www.youtube.com/watch?v=j-A0mwsJRmk) 
+[Marmosets Physically based rendering and you can too! post](https://marmoset.co/posts/physically-based-rendering-and-you-can-too/#input). \
+[Basic theory of Physically Based Rendering by Marmoset](https://marmoset.co/posts/basic-theory-of-physically-based-rendering/) \
