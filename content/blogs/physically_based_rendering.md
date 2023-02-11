@@ -158,13 +158,21 @@ Here is the Fresnel shclick Equation:
 [Source : Learn OpenGL](https://learnopengl.com/PBR/Theory)
 
 ```cpp
-float3 FresnelSchlickApproximation(float vDotH, float3 f0)
+// Compute the ratio of reflected light vs how much it refracts.
+// As the viewing angle increases, this ratio increases as well (quickly approaching one when angle becomes more and
+// more oblique). f0 is the base reflectivity : the surface reflection at zero incidence. For non metals, it will just
+// be a singular value in a float3 (v, v, v), but this is tinted for metals. Most dielectrics have a value of 0.04 as
+// f0, but depending on how metallic a surface is it will be between 0.04 (metalness = 0) and the surface color
+// (metalness = 1). cosTheta here is the angle between the halfway vector and the view direction. If the angle is 0.0,
+// then said ratio is 1, and the light will be brightest here. Also acts as the kS term (where kS + kD = 1, due to
+// energy conservation).
+
+float3 fresnelSchlickFunction(const float vDotH, const float3 f0)
 {
     return f0 + (1.0f - f0) * pow(clamp(1.0f - vDotH, 0.0f, 1.0f), 5.0f);
 }
-
 // f0 is computed by : 
-float3 BaseReflectivity(const float3 albedo, const float metallicFactor)
+float3 baseReflectivity(const float3 albedo, const float metallicFactor)
 {
     return lerp(float3(0.04, 0.04, 0.04), albedo, metallicFactor);
 }
@@ -206,8 +214,37 @@ The result of the GeometryShadowingFunction is a multiplier. The first sphere ha
 ![](/images/pbr/cook_torrence_brdf.png)
 [Source : Learn OpenGL](https://learnopengl.com/PBR/Theory)
 
-Finally, to compute the cook torrence BRDF, the code is as follows:
+Finally, to compute the irradiance for a point (using cook torrence BRDF) the code is as follows (here, a deferred shading is used, with all vectors in view space):
 ```cpp
+float3 fresnelSchlickFunction(const float vDotH, const float3 f0)
+{
+    return f0 + (1.0f - f0) * pow(clamp(1.0f - vDotH, 0.0f, 1.0f), 5.0f);
+}
+
+float normalDistributionFunction(const float3 normal, const float3 halfWayVector, const float roughnessFactor)
+{
+    float alpha = roughnessFactor * roughnessFactor;
+    float alphaSquare = alpha * alpha;
+
+    float nDotH = saturate(dot(normal, halfWayVector));
+
+    return alphaSquare / (max(PI * pow((nDotH * nDotH * (alphaSquare - 1.0f) + 1.0f), 2.0f), MIN_FLOAT_VALUE));
+}
+
+float schlickBeckmannGS(const float3 normal, const float3 x, const float roughnessFactor)
+{
+    float k = roughnessFactor / 2.0f;
+    float nDotX = saturate(dot(normal, x));
+
+    return nDotX / (max((nDotX * (1.0f - k) + k), MIN_FLOAT_VALUE));
+}
+
+float smithGeometryFunction(const float3 normal, const float3 viewDirection, const float3 lightDirection, const float roughnessFactor)
+{
+    return schlickBeckmannGS(normal, viewDirection, roughnessFactor) *
+           schlickBeckmannGS(normal, lightDirection, roughnessFactor);
+}
+
 // BRDF = kD * diffuseBRDF + kS * specularBRDF. (Note : kS + kD = 1).
 float3 cookTorrenceBRDF(const float3 normal, const float3 viewDirection, const float3 pixelToLightDirection, const float3 albedo, const float roughnessFactor,
             const float metallicFactor)
@@ -236,7 +273,36 @@ float3 cookTorrenceBRDF(const float3 normal, const float3 viewDirection, const f
     return (kD * diffuseBRDF + specularBRDF);
 }
 
-// For pixel shader of the PBR lighting is as follows (note : all lighting is done in view space).
+
+
+// -------------------------------------------------------------------------------------------------
+// Lighting pass shaders (Vertex and Pixel):
+
+#include "Utils.hlsli"
+
+#include "Shading/BRDF.hlsli"
+
+struct VSOutput
+{
+    float4 position : SV_Position;
+    float2 textureCoord : TEXTURE_COORD;
+};
+
+ConstantBuffer<interlop::PBRRenderResources> renderResources : register(b0);
+
+
+[RootSignature(BindlessRootSignature)] 
+VSOutput VsMain(uint vertexID : SV_VertexID) 
+{
+    static const float3 VERTEX_POSITIONS[3] = {float3(-1.0f, 1.0f, 0.0f), float3(3.0f, 1.0f, 0.0f),
+                                               float3(-1.0f, -3.0f, 0.0f)};
+
+    VSOutput output;
+    output.position = float4(VERTEX_POSITIONS[vertexID], 1.0f);
+    output.textureCoord = output.position.xy * float2(0.5f, -0.5f) + float2(0.5f, 0.5f);
+    return output;
+}
+
 [RootSignature(BindlessRootSignature)] 
 float4 PsMain(VSOutput psInput) : SV_Target
 {
@@ -247,7 +313,8 @@ float4 PsMain(VSOutput psInput) : SV_Target
     Texture2D<float4> albedoTexture = ResourceDescriptorHeap[renderResources.albedoGBufferIndex];
     Texture2D<float4> positionEmissiveTexture = ResourceDescriptorHeap[renderResources.positionEmissiveGBufferIndex];
     Texture2D<float4> normalEmissiveTexture = ResourceDescriptorHeap[renderResources.normalEmissiveGBufferIndex];
-    Texture2D<float4> aoMetalRoughnessEmissiveTexture =ResourceDescriptorHeap[renderResources.aoMetalRoughnessEmissiveGBufferIndex];
+    Texture2D<float4> aoMetalRoughnessEmissiveTexture =
+        ResourceDescriptorHeap[renderResources.aoMetalRoughnessEmissiveGBufferIndex];
 
     const float4 albedo = albedoTexture.Sample(pointClampSampler, psInput.textureCoord);
 
@@ -280,9 +347,8 @@ float4 PsMain(VSOutput psInput) : SV_Target
     {
         const float3 pixelToLightDirection = normalize(lightBuffer.viewSpaceLightPosition[i].xyz - viewSpacePosition);
 
-        const float3 brdf = cookTorrenceBRDF(normal, viewDirection, pixelToLightDirection, albedo.xyz, roughnessFactor, metallicFactor);
-
-        return float4(brdf, 1.0f);
+        const float3 brdf =
+            cookTorrenceBRDF(normal, viewDirection, pixelToLightDirection, albedo.xyz, roughnessFactor, metallicFactor);
 
         const float distance = length(lightBuffer.viewSpaceLightPosition[i].xyz - viewSpacePosition);
         const float attenuation = 1.0f / (distance * distance);
