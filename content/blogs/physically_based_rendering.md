@@ -78,7 +78,8 @@ The phenomemon where a light ray is interally scattered, is called subsurface sc
 
 In the image, one of the light rays gets refracted into the surface, scatters internally, and refracts out at a close proximity to the point of entry. On the otherhand, the outgoing refracted ray that is marked with X leaves the surface too far from point of entry, and we ignore this.
 
-The metallic property of a surface dictates what proportion of incoming light rays are reflected, and what proportion are absorbed. Metals typically have no absorption and only reflect light. This changes as materials become more non metallic. Light that gets absorbed and scattered within close proximity to the point of entering the surface contributes to the diffuse color.
+The metallic property of a surface dictates what proportion of incoming light rays are reflected, and what proportion are absorbed. Metals typically have no diffuse color, since they completely absorb refracted light with little to no scattering. This changes as materials become more non metallic. Light that gets absorbed and scattered within close proximity to the point of entering the surface contributes to the diffuse color.
+[The light that gets reflected immediately contributes to the specular lighting, and the light that gets refracted and absorbed, scattered, and refracted out of the surface contributes to the diffuse lighting.]
 
 Now, coming to energy conservation, if some light ray gets reflection, it will not be absorbed. The remaining light rays which are not reflected will get absorbed. That is, reflection and absorbtion are mutally exclusion, If a% of the rays get reflection, (100 - a%) of rays get refracted. This ensures that energy is conserved at all times, and is often ignored in non PBR shading models such as Blinn Phong or Gooch.
 
@@ -145,11 +146,11 @@ The left sphere has roughness value of 1, middle sphere has roughness value of 0
 
 Lower the roughness, more concentrated the microfacet normal orientation is and similarly more rough the surface is, more widely distributed and random the normal orientations are.
 ### Fresnel Equation
-It approximates the proportion of light rays that get reflected for a particular surface based on the viewing angle. 
+It approximates the proportion of light rays that get reflected rather than refracted for a particular surface based on the viewing angle. 
 
 When we look at a surface head-on, what we observe is the base reflectivity. When looking at parts of the surface at a grazing angle, the reflection becomes a lot more prevalent. Light is fully reflected from *any* surface at such grazing angles.
 
-This approximation, however, is more for non-metallic surface than metallic-surfaces, since metallic surfaces will never 'absorb' light rays and fully reflect them. Metals, also have a tinted surface reflectivity which often gives metals their distinct color. 
+This approximation, however, is more for non-metallic surface than metallic-surfaces. Metals also have a tinted surface reflectivity which often gives metals their distinct color. 
 
 To handle both metals and non metals, we consider a purely non metallic surface to have base reflectivity of (0.04, 0.04, 0.04) and lerp between this value of base reflectivity (f0) based on the metallic factor of the surface.
 
@@ -181,8 +182,9 @@ float3 baseReflectivity(const float3 albedo, const float metallicFactor)
 ### Geometry Shadowing / Masking function.
 ![](/images/pbr/geometry_shadowing.png)
 This function determines the number of microfacets that get shadowed or masked by other microfacets. More the roughness of a surface, the more probable these effects can be.
-In our implementation, we actually use the same function to compute both the shadowing and self masking values. This is done due to Smiths method. 
+In our implementation, we actually use the same function to compute both the shadowing and self masking values. This is done by Smiths method. 
 The SchickBeckMann function is passed in the surface normal, roughness factor, and X. If X is the light direction, it computes self shadowing, and if X is view direction, it computes masking.
+The final geometry shadowing/masking result is given by the smith function, which is the product of the schlick beckamnn geometry shadowing function with parameter X as view direction, and X as light direction.
 
 ```cpp
 // Geometry function : approximates the number / relative surface area of the surface which is actually visible to us.
@@ -379,7 +381,7 @@ Left to Right -> Material becomes more and more metallic.
 Rather than having a constant buffer dictate the material properties for the entire object, consider using textures for albedo, ambient occlusion, metallic and Roughness factors and normal maps. Using per-pixel material properties can boost the appeal of your render.
 
 ## Note on Metals
-To make metallic materials really pop out, consider looking int Image Based Lighting. Metals usually reflect most of the light that hits on them, and they refract light very little, giving them the dull appearance. IBL takes into account the surround environment (by sampling into a cube map) and can give really visually appealing results. 
+To make metallic materials really pop out, consider looking int Image Based Lighting. Metals usually reflect most of the light that hits on them, and in the light rays they absorb, they do so completetly with no scattering, giving them the dull appearance since metals have no diffuse color. IBL takes into account the surround environment (by sampling into a cube map) and can give really visually appealing results. 
 
 ## Closing Thoughts
 PBR offers a standardized solution to artist (and graphics programmers) to obtain realistic materials and renders. Note that PBR isnt a strict set of rules, but more of a guidline
