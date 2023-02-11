@@ -328,7 +328,7 @@ Thank you so much for your time! Feel free to leave comments if you felt somethi
 ## More Detailed Resources
 If you want to go deeper into PBR, here are some resources I have found to be very helpful: \
 [Learn OpenGL's PBR Chapter](https://learnopengl.com/PBR/Theory).\
-[Physics and Math of Shading | SIGGRAPH Course by Naty Hoffman](https://www.youtube.com/watch?v=j-A0mwsJRmk) 
+[Physics and Math of Shading | SIGGRAPH Course by Naty Hoffman](https://www.youtube.com/watch?v=j-A0mwsJRmk). \
 [Marmosets Physically based rendering and you can too! post](https://marmoset.co/posts/physically-based-rendering-and-you-can-too/#input). \
-[Basic theory of Physically Based Rendering by Marmoset](https://marmoset.co/posts/basic-theory-of-physically-based-rendering/) \
-[Readings on Physically Based Rendering by Interplay of Light](https://interplayoflight.wordpress.com/2013/12/30/readings-on-physically-based-rendering/)
+[Basic theory of Physically Based Rendering by Marmoset](https://marmoset.co/posts/basic-theory-of-physically-based-rendering/). \
+[Readings on Physically Based Rendering by Interplay of Light](https://interplayoflight.wordpress.com/2013/12/30/readings-on-physically-based-rendering/).
