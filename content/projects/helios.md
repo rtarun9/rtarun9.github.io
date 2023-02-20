@@ -19,17 +19,20 @@ summary: "DirectX12 Graphics renderer featuring rendering techniques such as PBR
 ## Features
 * Bindless Rendering (Using SM 6.6's Resource / Sampler descriptor Heap).
 * Normal Mapping.
-* Diffuse and Specular IBL.
 * Physically based rendering (PBR).
+* Diffuse and Specular IBL.
+* Bloom (Based on the Call of Duty Next Generation Post Processing presentation).
+* Screen Space Ambient Occlusion (SSAO).
 * Blinn-Phong Shading.
-* Screen Space Ambient Occlusion (SSAO)
 * Deferred Shading.
 * HDR and Tone Mapping.
-* Instanced rendering.
 * OmniDirectional Shadow Mapping.
-* Editor (ImGui Integration) with Logging and Content Browser.
+* Instanced rendering.
 * Compute Shader mip map generation.
 * Multi-threaded asset loading.
+* Editor (ImGui Integration) with Logging and Content Browser with drag-drop functionality for GLTF models.
+* D3D12MA integration.
+* Shader Compilation using DirectX Shader Compiler (DXC).
 
 > PBR and IBL
 ![](/images/IBL1.png)
@@ -41,6 +44,10 @@ summary: "DirectX12 Graphics renderer featuring rendering techniques such as PBR
 
 > Screen Space Ambient Occlusion
 ![](/images/SSAO.png)
+
+> Bloom
+![](/images/Bloom1.png)
+![](/images/Bloom2.png)
 
 > Editor (using ImGui)
 ![](/images/Editor1.png)
