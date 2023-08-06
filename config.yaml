@@ -64,12 +64,18 @@ menu:
       weight: 4
       name: Blogs
 
+    - identifier: work-experience
+      url: /work-experience/work-experience/
+      weight: 5
+      name: Work Experience
+      list: true
+
     - identifier: github
       url: 'https://github.com/rtarun9'
-      weight: 5
+      weight: 6
       pre: <span data-feather='github'> Github</span>
 
     - identifier: youtube
       url: 'https://www.youtube.com/channel/UCXASE11l2Y94oFE86oX-T8w'
-      weight: 5
+      weight: 7
       pre: <span data-feather='youtube'> Youtube </span>
