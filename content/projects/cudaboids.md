@@ -1,7 +1,7 @@
 ---
 title: "Flocking Boids Simulation (Cuda C++)"
 draft: false
-weight: 3
+weight: 4
 cover:
     image: "/images/cuda_boids/thumbnail.png"
 description: "A simple flocking boids simulation done using C++ and Cuda."

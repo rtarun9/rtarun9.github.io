@@ -1,7 +1,7 @@
 ---
 title: "Stereo Depth Estimation [Python OpenCV2 | C++ DirectX11]"
 draft: false
-weight: 4
+weight: 6
 cover:
     image: "/images/StereoDepthDisparity.png"
 description: "Estimation of depth map given stereo images and camera calibration parameters."
