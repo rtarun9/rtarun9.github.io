@@ -3,7 +3,7 @@ title: "Notes on Physically Based Rendering"
 draft: false
 comments: true
 date: 2023-11-2
-weight: 2
+weight: 3
 showtoc: true
 tocopen: true
 tags: ["HLSL", "Shading", "Rendering Techniques", "Materials"]

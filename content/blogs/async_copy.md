@@ -1,28 +1,90 @@
 ---
-title: "Deferred Shading"
+title: "Multi-Threaded + Async Copy Queue Chunk Loading System"
 draft: false
 comments: true
-date: 2022-12-24
-weight: 3
+date: 2024-07-08
+weight: 1
 showtoc: true
 tocopen: true
-tags: ["C++", "Shading", "Rendering Techniques"]
+tags: ["C++", "HLSL", "Optimation Techniques"]
 cover:
-    image: "/images/DeferredBlog.png"
-description: "Basic Explanation of Deferred Shading focusing on theory and implementation."
-summary: "Basic Explanation of the Deferred Shading rendering technique."
+    image: "/images/async_queue_blog/AsyncBlog.png"
+description: "Basic Explanation of the chunk loading system I implemented in my voxel engine"
+summary: "Basic Explanation of the chunk loading system I implemented in my voxel engine"
 ---
 
 
-## What is Deferred Shading?
-Let's say that you are using **forward rendering** : a naive rendering technique where you render objects and perform lighting calculations for each one of them. What could possibly go wrong with this approach :thinking:? 
+## Why cant I just naively load chunks?
+First, I'll try to explain *why* I decided to implement this slightly complicated chunk loading system in my [voxel-engine](https://github.com/rtarun9/voxel-engine).
+To create and render a chunk, the following steps are required: 
 
-The fact is that lighting can be very extremely performance heavy, and in forward rendering, we make a *lot* of pixel shader invocations: most of which will be unnecessary, wasting resources and computational power as those results will simply be overwritten by the shading computations of other objects whose mesh covers / overlaps the previous object's mesh. 
+(i) [CPU] : Any meshing algorithm. \
+(ii) [CPU] : Create the relavant GPU buffers (which typically includes two resources, one on a default heap and one on a upload heap (unless you use rebar). \
+(iii) [CPU] : Copy the CPU side data into the uplaod buffer. \
+(iv) [GPU] : Execute a copy resource command so that data from the upload buffer is copied to the default buffer. \
+(v) [CPU] : Check if / wait till the data is ready in the default buffer. \
+(vi) [CPU] : Add chunk to the render list and render. 
 
-This is worsened by the fact that with a large number of lights in the scene, the unnecessary computations are of the order **Number of pixels * Number of lights**
+If you naively load chunks, you are likely to run into a few problems since
+you can run the meshing algorithm only one chunk at a time, potentially causing the CPU to become a bottleneck if you want to create multiple chunks a frame.
+If you try to load multiple chunks per frame, while new chunks are being loaded, the entire application will start to lag, becoming nearly unusable.
 
-\
-Take a look at these series of images for a visual example : 
+## Multi-Threading the Chunk loading process
+Inorder to create multiple chunks a frame, you can launch multiple threads for each chunk. By doing so, the meshing process happens on a different thread for each chunk, which sill significantly reduce lag and enables you to load multiple chunks per frame.
+
+I use std::future and std::async to simplify this process. When you want to call a function on a different thread that returns a value, you can use std::future. 
+You can periodically check the status of the future using `std::future_status` to determine if the thread has finished execution and if you can retrive the actual function return value from the future.
+In my code, I use std::future / std::async in the following way:
+
+```cpp
+// I have a queue of std::pair<size_t, std::future<SetupChunkData>> named 
+// 'm_setup_chunk_futures_queue'. I populate this queue by:
+
+m_setup_chunk_futures_queue.emplace(
+            std::pair{renderer.m_copy_queue.m_monotonic_fence_value + 1,
+                      std::async(&ChunkManager::internal_mt_setup_chunk, this, 
+                      std::ref(renderer), top)});
+// Link : https://github.com/rtarun9/voxel-engine/blob/58b83510cbde664b6ec191af46eb66a083f33d6b/src/voxel.cpp#L257
+
+// Then, I have a function that checks the status of the std::future at the front of the 
+// queue:
+while (!m_setup_chunk_futures_queue.empty() && ......)
+{
+    auto &setup_chunk_data = m_setup_chunk_futures_queue.front();
+
+    // Wait for 0 seconds and check the status of future.
+    switch (std::future_status status = setup_chunk_data.second.wait_for(0s); status)
+    {
+    case std::future_status::timeout: {
+        // Chunk is not loaded, return and check for the status in the next frame.
+        return;
+    }
+    break;
+
+    case std::future_status::ready: {
+        // The future is ready, the .get() function can be used to access the function 
+        // return value and chunk can be loaded and rendered!
+        SetupChunkData chunk_to_load = setup_chunk_data.second.get();
+        .......
+    }
+    }
+}
+
+// Link : https://github.com/rtarun9/voxel-engine/blob/58b83510cbde664b6ec191af46eb66a083f33d6b/src/voxel.cpp#L268
+```
+
+Fantastic! Now, chunks can be meshed and setup on a different thread, so the application will not slow down much!
+But wait, we have only improved the chunk loading processes on the *cpu*. Remember that we still have to execute the copy resource command
+on the GPU.
+
+With the current multi threaded system, say you load 32 chunks a frame in a multi-threaded fashion. Now, you will need to execute 32 CopyResource commands
+on the GPU, and with a *single* queue, your draw calls and copy resource calls happen on the same GPU.
+Is there a alternative to this?
+
+## Using Multiple GPU Queues
+
+> What is a Queue?
+
 
 > Focus on the pillar between the red and green curtains!
 ![](/images/DeferredB0.png)
