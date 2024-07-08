@@ -1,7 +1,7 @@
 ---
 title: "cuda-raytracer [Nvidia CUDA, C++]"
 draft: false
-weight: 3
+weight: 4
 cover:
     image: "/images/cuda-raytracer/cuda-raytracer-thumbnail.png"
 

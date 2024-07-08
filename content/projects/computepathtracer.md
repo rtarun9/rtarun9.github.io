@@ -1,7 +1,7 @@
 ---
 title: "Compute Path Tracer [C++ DirectX11]"
 draft: false
-weight: 5
+weight: 7
 cover:
     image: "/images/cpt.png"
 

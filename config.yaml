@@ -22,7 +22,7 @@ params:
   profileMode:
     enabled: true
     title: Tarun Ramaswamy
-    subtitle: Computer Science Student | Graphics Programmer | C++ Programmer
+    subtitle:  Graphics / C++ Programmer 
   socialIcons:
     - name: linkedin
       url: 'https://www.linkedin.com/in/tarun-ramaswamy-931426200/'

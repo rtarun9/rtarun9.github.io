@@ -19,13 +19,10 @@ testing and iteration speeds.
 - Tools used: C++ 17, Visual Studio 2017, Git, and GitHub.
 
 ## DevOps Intern (Tally Solutions) 
-*Duration: Jan 2024 - July 2024*
+*Duration: Jan 2024 - Aug 2024*
 
-- Utilized Bitbucket and JIRA Rest API to report generation of several reports, resulting in significant weekly
-time savings of 1-2 hours previously spent on manual report generation.
-
+- Automated report generation using Bitbucket and JIRA Rest API’s, saving 1-2 hours weekly
+previously spent on manual reporting.
 - Developed custom webhooks to enforce rules on creation and updates of pull requests.
-
-- Created scripts / Yaml pipeline templates for AWS and Azure DevOps.
-
-- Tools used: Python 3, Bash, Git, Bitbucket, JIRA, AWS, Azure DevOps, Jenkins
+- Created automation scripts / Yaml pipeline templates for AWS and Azure DevOps.
+- Tools used: Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Docker, Linux
