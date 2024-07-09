@@ -182,6 +182,9 @@ void ChunkManager::transfer_chunks_from_setup_to_loaded_state(const u64 current_
 
 Using this mechanism (no GPU GPU sync), the code is heavily simplified.
 
+A diagram to explain this logic in a visual manner:
+![](/images/async_queue_blog/AsyncExplanationDiagram.png)
+
 ## Grouping copy command list calls together.
 
 ## Closing Thoughts
