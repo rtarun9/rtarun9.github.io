@@ -9,24 +9,24 @@ tocopen: true
 tags: ["C++", "HLSL", "Optimation Techniques"]
 cover:
     image: "/images/async_queue_blog/AsyncBlog.png"
-description: "Basic Explanation of the chunk loading system I implemented in my voxel engine"
-summary: "Basic Explanation of the chunk loading system I implemented in my voxel engine"
+description: "Basic Explanation of the chunk loading system I implemented in my voxel engine."
+summary: "Basic Explanation of the chunk loading system I implemented in my voxel engine."
 ---
 
 
-## Why cant I just naively load chunks?
-First, I'll try to explain *why* I decided to implement this slightly complicated chunk loading system in my [voxel-engine](https://github.com/rtarun9/voxel-engine).
-To create and render a chunk, the following steps are required: 
+## Why can't I just naively load chunks?
+First, let me explain *why* I chose to implement this slightly complicated chunk loading system in my [voxel-engine](https://github.com/rtarun9/voxel-engine).
+Creating and rendering a chunk requires the following steps:
 
 (i) [CPU] : Any meshing algorithm. \
-(ii) [CPU] : Create the relavant GPU buffers (which typically includes two resources, one on a default heap and one on a upload heap (unless you use rebar)). \
+(ii) [CPU] : Create the relevant GPU buffers (which typically includes two resources, one on a default heap and one on a upload heap (unless you use rebar)). \
 (iii) [CPU] : Copy the CPU side data to the upload buffer. \
 (iv) [GPU] : Execute a copy resource command so that data from the upload buffer is copied to the default buffer. \
 (v) [CPU] : Check if / wait till the data is ready in the default buffer. \
 (vi) [CPU] : Add chunk to the render list and render. 
 
 If you naively load chunks, you are likely to run into a few problems since
-you can run the meshing algorithm only one chunk at a time, potentially causing the CPU to become a bottleneck if you want to create multiple chunks a frame.
+you can run the meshing algorithm only one chunk at a time, potentially causing the CPU to become a bottleneck if you want to create multiple chunks per frame.
 
 If you try to load multiple chunks per frame, while new chunks are being loaded, the entire application will start to lag, becoming nearly unusable.
 
@@ -43,6 +43,8 @@ In my code, I use std::future / std::async in the following way:
 
 void ChunkManager::create_chunks_from_setup_stack(Renderer &renderer) 
 {
+    // Note : Command list recording is not thread-safe, so before recording 
+    //  any GPU commands make sure that each thread has its own command list, or you have the proper sync primitives in place.
     m_setup_chunk_futures_queue.emplace(
                 std::pair{renderer.m_copy_queue.m_monotonic_fence_value + 1,
                         std::async(&ChunkManager::internal_mt_setup_chunk, this, 
@@ -81,7 +83,7 @@ void ChunkManager::transfer_chunks_from_setup_to_loaded_state(const u64
 // Link : https://github.com/rtarun9/voxel-engine/blob/58b83510cbde664b6ec191af46eb66a083f33d6b/src/voxel.cpp#L268
 ```
 
-Fantastic! Now, chunks can be meshed and setup on a different thread, so the application will not slow down much!
+Fantastic! Now, chunks can be meshed and setup on a different thread, and now the application will not slow down so much!
 But wait, we have only improved the chunk loading processes on the *cpu*. Remember that we still have to execute the copy resource command
 on the GPU.
 
@@ -96,7 +98,7 @@ Is there a alternative to this?
 
 In D3D12 terms, a command queue provides methods for submitting command lists, synchronizing command list execution, etc. A command queue is essentially a 'execution port' for the GPU.
 
-In D3D12, you have multiple types of command queue's, namely:
+In D3D12, you have multiple types of command queues, namely:
 
 (i) Direct (No restrictions on the commands it can execute) \
 (ii) Compute  \
@@ -104,7 +106,7 @@ In D3D12, you have multiple types of command queue's, namely:
 
 Now, your draw calls execute on the Direct queue. Your GPU *may* have multiple dedicated queues that can execute commands in parallel. This means, you can have one queue (Direct command queue) for rendering, and one queue (Copy command queue) specifically for your CopyResource calls.
 
-Heres a screenshot from task manager, which shows that my GPU (Nvidia GTX 1650) has a dedicated copy queue.
+Here's a screenshot from task manager, which shows that my GPU (Nvidia GTX 1650) has a dedicated copy queue.
 ![](/images/async_queue_blog/GPUQueues.png)
 
 So now, the renderer can utilize a dedicated copy and direct queue in the following ways: \
@@ -114,7 +116,7 @@ So now, the renderer can utilize a dedicated copy and direct queue in the follow
 ## Synchronizing between the 2 queues
 For the specific requirements of my [voxel-engine](https://github.com/rtarun9/voxel-engine), no GPU-GPU sync is required. Instead, what I do is: \
 (i) Use a std::pair<size_t, std::future<SetupChunkData>> where the first component of the pair is the fence value that the copy queue is signaled with. \
-This can be used to determine if the CopyResource command for a particular chunk has completed execution or not. \
+This can be used to determine if the CopyResource command for a particular chunk has completed execution. \
 (ii) Each frame, check the above step for a few chunks and move them onto another data structure so that they can be rendered.
 
 The chain of functions called is as follows:
@@ -197,40 +199,21 @@ void ChunkManager::transfer_chunks_from_setup_to_loaded_state(const u64 current_
 
 Using this mechanism (no GPU GPU sync), the code is heavily simplified.
 
-A diagram to explain this logic in a visual manner:
+A diagram to explain this logic:
 ![](/images/async_queue_blog/AsyncExplanationDiagram.png)
 
-Here, we see that the direct queue doesn't wait for the copy queue at all. The worker threads (there are multiple of them, but the diagram only shows one for simplicity) run the meshing algorithm, get a command list, record the CopyResource call and submit to the copy queue for execution.
-The CPU takes the loaded chunks, adds them to a datastrucure (in my case : a hashmap) and fills the indirect command buffer with relavant info.
+Here, we see that the direct queue doesn't wait for the copy queue. The worker threads (there are multiple of them, but the diagram only shows one for simplicity) run the meshing algorithm, get a command list, record the CopyResource call, and submit to the copy queue for execution.
+The CPU takes the loaded chunks, adds them to a data structure (in my case: a hashmap), and fills the indirect command buffer with relevant info.
 
 The Direct queue uses the indirect command buffer to perform GPU culling, where the non culled chunks are rendered.
 
-## Grouping copy command list calls together.
-
-While the solution mentioned above works fairly well, it uses a dedicated command list for EACH copy resource call (I do use a queue so that command list can be resued, but the number of command list can go up to 8).
-
-According to [Nvidia's Advanced API Performance - Command Buffers blog](https://developer.nvidia.com/blog/advanced-api-performance-command-buffers/), they mention that:
-
-> Don’t create too many threads or too many command lists. \
-        Too many threads oversubscribes your CPU resources, while too many command lists may accumulate too much overhead.
-
-A potential fix for this problem, is to use N copy command lists, where N is the number of frames in flight. Then, ALL the copy resource calls that happen during frame X can be submitted at once to the copy queue.
-
-Great, right :thinking:
-Well... you cant record calls on a command list when it is closed, and you cant submit a command list *while* it is closed. To fixed this issue, you can use *conditional variables* to *block* the worker thread from submitted command list after the command list has been closed.
-
-The code where I used this approach can be found [here](https://github.com/rtarun9/voxel-engine/blob/db24ad88908f1dd5f2ccdfab133530f393d835d7/src/renderer.cpp#L308) and [here](https://github.com/rtarun9/voxel-engine/blob/db24ad88908f1dd5f2ccdfab133530f393d835d7/include/voxel-engine/renderer.hpp#L118).
-
-
 ## Closing Thoughts
-Deferred shading is a really simple rendering technique that gives you the capability to add a lot of lights in the scene, potentially improve the performance of complex scenes and worlds, and open doors to several exciting screen space algorithms due to the per-pixel data stores in the GBuffer (geometry buffer).
-
-There are a few notable disadvantages of using this technique, but in most cases, these can easily be overcome (as evident from the fact that despite the cons, deferred shading is THE standard/goto rendering method used by Games and Engines all over the world).
+Implementing async copy is very similar to multi-threading. It does make your code more complex, but it does use your hardware more efficiently, and when your GPU *has* dedicated queues, why not use it?
 
 
 Thank you so much for your time! Feel free to leave comments if you felt something was lacking/incorrect or your opinions on my post! If you would like to reach out to me, head over to the [Home page](/) to find some contact links there.
 
 ## More Detailed Resources
-If you want to go deeper into deferred rendering, here are some resources I have found to be very helpful: \
-[Learn OpenGL's Deferred Shading article](https://learnopengl.com/Advanced-Lighting/Deferred-Shading).\
-[OGL Dev's Deferred Shading tutorial](https://ogldev.org/www/tutorial35/tutorial35.html). 
+If you want to go deeper into async copy / multi-threading, here are some resources I have found to be very helpful: \
+[CPP Reference's std::future section](https://en.cppreference.com/w/cpp/thread/future) \
+[D3D12's Design Philosophy of Command Queues and Command Lists](https://learn.microsoft.com/en-us/windows/win32/direct3d12/design-philosophy-of-command-queues-and-command-lists)
