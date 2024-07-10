@@ -3,7 +3,7 @@ title: "Deferred Shading"
 draft: false
 comments: true
 date: 2022-12-24
-weight: 4
+weight: 3
 showtoc: true
 tocopen: true
 tags: ["C++", "Shading", "Rendering Techniques"]
