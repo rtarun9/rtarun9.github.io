@@ -19,18 +19,19 @@ First, I'll try to explain *why* I decided to implement this slightly complicate
 To create and render a chunk, the following steps are required: 
 
 (i) [CPU] : Any meshing algorithm. \
-(ii) [CPU] : Create the relavant GPU buffers (which typically includes two resources, one on a default heap and one on a upload heap (unless you use rebar). \
-(iii) [CPU] : Copy the CPU side data into the uplaod buffer. \
+(ii) [CPU] : Create the relavant GPU buffers (which typically includes two resources, one on a default heap and one on a upload heap (unless you use rebar)). \
+(iii) [CPU] : Copy the CPU side data to the upload buffer. \
 (iv) [GPU] : Execute a copy resource command so that data from the upload buffer is copied to the default buffer. \
 (v) [CPU] : Check if / wait till the data is ready in the default buffer. \
 (vi) [CPU] : Add chunk to the render list and render. 
 
 If you naively load chunks, you are likely to run into a few problems since
 you can run the meshing algorithm only one chunk at a time, potentially causing the CPU to become a bottleneck if you want to create multiple chunks a frame.
+
 If you try to load multiple chunks per frame, while new chunks are being loaded, the entire application will start to lag, becoming nearly unusable.
 
 ## Multi-Threading the Chunk loading process
-Inorder to create multiple chunks a frame, you can launch multiple threads for each chunk. By doing so, the meshing process happens on a different thread for each chunk, which sill significantly reduce lag and enables you to load multiple chunks per frame.
+Inorder to create multiple chunks per frame, you can launch a thread for each chunk. By doing so, the meshing process happens on a different thread for each chunk, which significantly reduces lag and enables you to load multiple chunks per frame.
 
 I use std::future and std::async to simplify this process. When you want to call a function on a different thread that returns a value, you can use std::future. 
 You can periodically check the status of the future using `std::future_status` to determine if the thread has finished execution and if you can retrive the actual function return value from the future.
@@ -40,33 +41,40 @@ In my code, I use std::future / std::async in the following way:
 // I have a queue of std::pair<size_t, std::future<SetupChunkData>> named 
 // 'm_setup_chunk_futures_queue'. I populate this queue by:
 
-m_setup_chunk_futures_queue.emplace(
-            std::pair{renderer.m_copy_queue.m_monotonic_fence_value + 1,
-                      std::async(&ChunkManager::internal_mt_setup_chunk, this, 
-                      std::ref(renderer), top)});
+void ChunkManager::create_chunks_from_setup_stack(Renderer &renderer) 
+{
+    m_setup_chunk_futures_queue.emplace(
+                std::pair{renderer.m_copy_queue.m_monotonic_fence_value + 1,
+                        std::async(&ChunkManager::internal_mt_setup_chunk, this, 
+                        std::ref(renderer), top)});
+}
 // Link : https://github.com/rtarun9/voxel-engine/blob/58b83510cbde664b6ec191af46eb66a083f33d6b/src/voxel.cpp#L257
 
 // Then, I have a function that checks the status of the std::future at the front of the 
 // queue:
-while (!m_setup_chunk_futures_queue.empty() && ......)
+void ChunkManager::transfer_chunks_from_setup_to_loaded_state(const u64 
+    current_copy_queue_fence_value)
 {
-    auto &setup_chunk_data = m_setup_chunk_futures_queue.front();
-
-    // Wait for 0 seconds and check the status of future.
-    switch (std::future_status status = setup_chunk_data.second.wait_for(0s); status)
+    while (!m_setup_chunk_futures_queue.empty() && ......)
     {
-    case std::future_status::timeout: {
-        // Chunk is not loaded, return and check for the status in the next frame.
-        return;
-    }
-    break;
+        auto &setup_chunk_data = m_setup_chunk_futures_queue.front();
 
-    case std::future_status::ready: {
-        // The future is ready, the .get() function can be used to access the function 
-        // return value and chunk can be loaded and rendered!
-        SetupChunkData chunk_to_load = setup_chunk_data.second.get();
-        .......
-    }
+        // Wait for 0 seconds and check the status of future.
+        switch (std::future_status status = setup_chunk_data.second.wait_for(0s); status)
+        {
+        case std::future_status::timeout: {
+            // Chunk is not loaded, return and check for the status in the next frame.
+            return;
+        }
+        break;
+
+        case std::future_status::ready: {
+            // The future is ready, the .get() function can be used to access the function 
+            // return value and chunk can be loaded and rendered!
+            SetupChunkData chunk_to_load = setup_chunk_data.second.get();
+            .......
+        }
+        }
     }
 }
 
@@ -78,20 +86,23 @@ But wait, we have only improved the chunk loading processes on the *cpu*. Rememb
 on the GPU.
 
 With the current multi threaded system, say you load 32 chunks a frame in a multi-threaded fashion. Now, you will need to execute 32 CopyResource commands
-on the GPU, and with a *single* queue, your draw calls and copy resource calls happen on the same GPU.
+on the GPU, and with a *single* queue, your draw calls and copy resource calls need to be completed together before the command queue is signalled. This means, the time to process the commands for each frame increases significantly.
+
 Is there a alternative to this?
 
 ## Using Multiple GPU Command Queues
 
 > What is a Command Queue?
+
 In D3D12 terms, a command queue provides methods for submitting command lists, synchronizing command list execution, etc. A command queue is essentially a 'execution port' for the GPU.
 
 In D3D12, you have multiple types of command queue's, namely:
+
 (i) Direct (No restrictions on the commands it can execute) \
 (ii) Compute  \
 (iii) Copy
 
-Now, your draw calls run on the Direct queue. Your GPU *may* have multiple dedicated queues that can execute in parallel. This means, you can have one queue (Direct command queue) for rendering, and one queue (Copy command queue) specifically for your CopyResource calls.
+Now, your draw calls execute on the Direct queue. Your GPU *may* have multiple dedicated queues that can execute commands in parallel. This means, you can have one queue (Direct command queue) for rendering, and one queue (Copy command queue) specifically for your CopyResource calls.
 
 Heres a screenshot from task manager, which shows that my GPU (Nvidia GTX 1650) has a dedicated copy queue.
 ![](/images/async_queue_blog/GPUQueues.png)
@@ -104,11 +115,12 @@ So now, the renderer can utilize a dedicated copy and direct queue in the follow
 For the specific requirements of my [voxel-engine](https://github.com/rtarun9/voxel-engine), no GPU-GPU sync is required. Instead, what I do is: \
 (i) Use a std::pair<size_t, std::future<SetupChunkData>> where the first component of the pair is the fence value that the copy queue is signaled with. \
 This can be used to determine if the CopyResource command for a particular chunk has completed execution or not. \
-(ii) Each frame, check the above steps for a few chunks and move them onto another data structure so that they can be rendered.
+(ii) Each frame, check the above step for a few chunks and move them onto another data structure so that they can be rendered.
 
 The chain of functions called is as follows:
 
 ```cpp
+// Called from the main thread.
 void ChunkManager::create_chunks_from_setup_stack(Renderer &renderer)
 {
     // When adding the the std::future queue, also push the copy queue fence value:
@@ -118,6 +130,7 @@ void ChunkManager::create_chunks_from_setup_stack(Renderer &renderer)
                     std::ref(renderer), top)});
 }
 
+// Called from multiple worker threads
 ChunkManager::SetupChunkData ChunkManager::internal_mt_setup_chunk(Renderer 
     &renderer, const size_t index)
 {
@@ -128,6 +141,7 @@ ChunkManager::SetupChunkData ChunkManager::internal_mt_setup_chunk(Renderer
                 std::wstring(L"Chunk Index buffer : ") + std::to_wstring(index));
 }
 
+// Called from multiple worker threads
 // EACH of the create_X_buffer functions internally call:
 Renderer::IndexBufferWithIntermediateResource Renderer::create_index_buffer
     (const void *data, const size_t stride,
@@ -145,6 +159,7 @@ Renderer::IndexBufferWithIntermediateResource Renderer::create_index_buffer
     m_copy_queue.execute_command_list(std::move(command_allocator_list_pair));
 }
 
+// Called from single worker thread
 void Renderer::CopyCommandQueue::execute_command_list(CommandAllocatorListPair 
 &&alloc_list_pair)
 {
@@ -185,7 +200,27 @@ Using this mechanism (no GPU GPU sync), the code is heavily simplified.
 A diagram to explain this logic in a visual manner:
 ![](/images/async_queue_blog/AsyncExplanationDiagram.png)
 
+Here, we see that the direct queue doesn't wait for the copy queue at all. The worker threads (there are multiple of them, but the diagram only shows one for simplicity) run the meshing algorithm, get a command list, record the CopyResource call and submit to the copy queue for execution.
+The CPU takes the loaded chunks, adds them to a datastrucure (in my case : a hashmap) and fills the indirect command buffer with relavant info.
+
+The Direct queue uses the indirect command buffer to perform GPU culling, where the non culled chunks are rendered.
+
 ## Grouping copy command list calls together.
+
+While the solution mentioned above works fairly well, it uses a dedicated command list for EACH copy resource call (I do use a queue so that command list can be resued, but the number of command list can go up to 8).
+
+According to [Nvidia's Advanced API Performance - Command Buffers blog](https://developer.nvidia.com/blog/advanced-api-performance-command-buffers/), they mention that:
+
+> Don’t create too many threads or too many command lists. \
+        Too many threads oversubscribes your CPU resources, while too many command lists may accumulate too much overhead.
+
+A potential fix for this problem, is to use N copy command lists, where N is the number of frames in flight. Then, ALL the copy resource calls that happen during frame X can be submitted at once to the copy queue.
+
+Great, right :thinking:
+Well... you cant record calls on a command list when it is closed, and you cant submit a command list *while* it is closed. To fixed this issue, you can use *conditional variables* to *block* the worker thread from submitted command list after the command list has been closed.
+
+The code where I used this approach can be found [here](https://github.com/rtarun9/voxel-engine/blob/db24ad88908f1dd5f2ccdfab133530f393d835d7/src/renderer.cpp#L308) and [here](https://github.com/rtarun9/voxel-engine/blob/db24ad88908f1dd5f2ccdfab133530f393d835d7/include/voxel-engine/renderer.hpp#L118).
+
 
 ## Closing Thoughts
 Deferred shading is a really simple rendering technique that gives you the capability to add a lot of lights in the scene, potentially improve the performance of complex scenes and worlds, and open doors to several exciting screen space algorithms due to the per-pixel data stores in the GBuffer (geometry buffer).
