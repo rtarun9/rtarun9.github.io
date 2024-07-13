@@ -207,6 +207,12 @@ The CPU takes the loaded chunks, adds them to a data structure (in my case: a ha
 
 The Direct queue uses the indirect command buffer to perform GPU culling, where the non culled chunks are rendered.
 
+## Using a thread pool over std::async
+
+If in your engine, you load multiple chunks each frame, you might find the application slow down a lot because of the overhead of launching / starting multiple new threads each time. \
+In this case, you might want to consider replacing `std::async` with a thread pool like [BS::thread-pool](https://github.com/bshoshany/thread-pool). In a thread pool, threads are created at start up and the same threads are re-used. Essentially, the 'overhead' of launching a new thread each time is eliminated.
+
+However, if you have `X` threads in your thread pool and want to launch `> X` threads, a few threads will stall. This is a fine tradeoff to make, as the main thread is unaffected and will NOT face any delays / lag when compared to using `std::async`.
 ## Closing Thoughts
 Implementing async copy is very similar to multi-threading. It does make your code more complex, but it does use your hardware more efficiently, and when your GPU *has* dedicated queues, why not use it?
 
