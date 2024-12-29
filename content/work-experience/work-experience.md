@@ -26,3 +26,10 @@ previously spent on manual reporting.
 - Developed custom webhooks to enforce rules on creation and updates of pull requests.
 - Created automation scripts / Yaml pipeline templates for AWS and Azure DevOps.
 - Tools used: Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Docker, Linux
+
+## Trainee DevOps Engineer (Tally Solutions) 
+*Duration: Sep 2024 - Present*
+
+- Implement CI/CD pipelines for multiple projects utilizing EKS and Docker for seamless deployment.
+- Configure infrastructure on AWS EKS using Terraform, adhering to Infrastructure as Code (IaC) best practices.
+- Tools used: Docker, Kubernetes, Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Linux
