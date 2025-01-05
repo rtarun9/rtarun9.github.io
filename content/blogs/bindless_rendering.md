@@ -71,7 +71,7 @@ uint32_t Descriptor::GetDescriptorIndex(const DescriptorHandle& descriptorHandle
 
 
 Now, how exactly do we go about using bindless rendering?
-Say you want to render a SkyBox. You would need a few resources for this: A position buffer (in this case I am using Vertex Pulling and not Vertex Buffer), a texture, and a view projection matrix (which I store in a SceneBuffer). The complete HLSL shader code for this can be found [here](https://github.com/rtarun9/Helios/blob/master/Shaders/SkyBox/SkyBox.hlsl):
+Say you want to render a SkyBox. You would need a few resources for this: A position buffer (in this case I am using Vertex Pulling and not Vertex Buffer), a texture, and a view projection matrix (which I store in a SceneBuffer). The complete HLSL shader code for this can be found [here](https://github.com/rtarun9/Helios/blob/master/Shaders/CubeMap/CubeMap.hlsl):
 ```cpp
 struct SkyBoxRenderResources
 {

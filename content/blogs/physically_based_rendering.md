@@ -81,7 +81,7 @@ In the image, one of the light rays gets refracted into the surface, scatters in
 The metallic property of a surface dictates what proportion of incoming light rays are reflected, and what proportion are absorbed. Metals typically have no diffuse color, since they completely absorb refracted light with little to no scattering. This changes as materials become more non metallic. Light that gets absorbed and scattered within close proximity to the point of entering the surface contributes to the diffuse color.
 [The light that gets reflected immediately contributes to the specular lighting, and the light that gets refracted and absorbed, scattered, and refracted out of the surface contributes to the diffuse lighting.]
 
-Now, coming to energy conservation, if some light ray gets reflection, it will not be absorbed. The remaining light rays which are not reflected will get absorbed. That is, reflection and absorbtion are mutally exclusion, If a% of the rays get reflection, (100 - a%) of rays get refracted. This ensures that energy is conserved at all times, and is often ignored in non PBR shading models such as Blinn Phong or Gooch.
+Now, coming to energy conservation, if some light ray gets reflected, it will not be absorbed. The remaining light rays which are not reflected will get absorbed. That is, reflection and absorbtion are mutally exclusion, If a% of the rays get reflection, (100 - a%) of rays get refracted. This ensures that energy is conserved at all times, and is often ignored in non PBR shading models such as Blinn Phong or Gooch.
 
 ## Physically Based BRDF
 What is a BRDF? 
@@ -378,7 +378,7 @@ Left to Right -> Material becomes more and more metallic.
 ![](/images/pbr/pbr_demo_3.png)
 
 ## PBR Materials
-Rather than having a constant buffer dictate the material properties for the entire object, consider using textures for albedo, ambient occlusion, metallic and Roughness factors and normal maps. Using per-pixel material properties can boost the appeal of your render.
+Rather than having a constant buffer dictate the material properties for the entire object, consider using textures for albedo, ambient occlusion, metallic and roughness factors and normal maps. Using per-pixel material properties can boost the appeal of your render.
 
 ## Note on Metals
 To make metallic materials really pop out, consider looking int Image Based Lighting. Metals usually reflect most of the light that hits on them, and in the light rays they absorb, they do so completetly with no scattering, giving them the dull appearance since metals have no diffuse color. IBL takes into account the surround environment (by sampling into a cube map) and can give really visually appealing results. 
