@@ -7,16 +7,15 @@ showtoc: false
 tocopen: false
 ---
 
-## C++ and Rendering Intern (MicroFacet.io)
-*Duration: Mar 2023 - May 2023*
+## Engineer Associate (Qualcomm)
+*Duration: Feb 2025 - Present*
 
-- Successfully implemented a Procedural Brick Texture module into the core offline renderer
-with features such as rounded brick corners, double-stacked bricks, join transitions, block variants, etc.
+## Trainee DevOps Engineer (Tally Solutions) 
+*Duration: Sep 2024 - Feb 2025*
 
-- Achieved a 30% reduction in C++ build times through optimization efforts to drastically enhance
-testing and iteration speeds.
-
-- Tools used: C++ 17, Visual Studio 2017, Git, and GitHub.
+- Implement CI/CD pipelines for multiple projects utilizing EKS and Docker for seamless deployment.
+- Configure infrastructure on AWS EKS using Terraform, adhering to Infrastructure as Code (IaC) best practices.
+- Tools used: Docker, Kubernetes, Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Linux
 
 ## DevOps Intern (Tally Solutions) 
 *Duration: Jan 2024 - Aug 2024*
@@ -27,9 +26,13 @@ previously spent on manual reporting.
 - Created automation scripts / Yaml pipeline templates for AWS and Azure DevOps.
 - Tools used: Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Docker, Linux
 
-## Trainee DevOps Engineer (Tally Solutions) 
-*Duration: Sep 2024 - Present*
+## C++ and Rendering Intern (MicroFacet.io)
+*Duration: Mar 2023 - May 2023*
 
-- Implement CI/CD pipelines for multiple projects utilizing EKS and Docker for seamless deployment.
-- Configure infrastructure on AWS EKS using Terraform, adhering to Infrastructure as Code (IaC) best practices.
-- Tools used: Docker, Kubernetes, Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Linux
+- Successfully implemented a Procedural Brick Texture module into the core offline renderer
+with features such as rounded brick corners, double-stacked bricks, join transitions, block variants, etc.
+
+- Achieved a 30% reduction in C++ build times through optimization efforts to drastically enhance
+testing and iteration speeds.
+
+- Tools used: C++ 17, Visual Studio 2017, Git, and GitHub.
