@@ -7,8 +7,13 @@ showtoc: false
 tocopen: false
 ---
 
-## Engineer Associate (Qualcomm)
-*Duration: Feb 2025 - Present*
+## Graphics Software Engineer (Qualcomm)
+*Duration: Dec 2025 - Present*
+
+- Top secret graphics stuff
+
+## Associate Engineer (Qualcomm)
+*Duration: Feb 2025 - Dec 2025*
 
 ## Trainee DevOps Engineer (Tally Solutions) 
 *Duration: Sep 2024 - Feb 2025*
