@@ -7,22 +7,27 @@ showtoc: false
 tocopen: false
 ---
 
-## Graphics Software Engineer (Qualcomm)
-*Duration: Dec 2025 - Present*
+# Qualcomm
 
+### -> Graphics Software Engineer
+*Duration: Dec 2025 - Present*
 - Top secret graphics stuff
 
-## Associate Engineer (Qualcomm)
-*Duration: Feb 2025 - Dec 2025*
 
-## Trainee DevOps Engineer (Tally Solutions) 
+### -> Associate Engineer 
+*Duration: Feb 2025 - Dec 2025*
+- Top secret graphics stuff
+
+# Tally Solutions
+
+### -> Trainee Devops Engineer
 *Duration: Sep 2024 - Feb 2025*
 
 - Implement CI/CD pipelines for multiple projects utilizing EKS and Docker for seamless deployment.
 - Configure infrastructure on AWS EKS using Terraform, adhering to Infrastructure as Code (IaC) best practices.
 - Tools used: Docker, Kubernetes, Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Linux
 
-## DevOps Intern (Tally Solutions) 
+### -> DevOps Intern 
 *Duration: Jan 2024 - Aug 2024*
 
 - Automated report generation using Bitbucket and JIRA Rest API’s, saving 1-2 hours weekly
@@ -31,7 +36,8 @@ previously spent on manual reporting.
 - Created automation scripts / Yaml pipeline templates for AWS and Azure DevOps.
 - Tools used: Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Docker, Linux
 
-## C++ and Rendering Intern (MicroFacet.io)
+# MicroFacet.io
+### -> C++ and Rendering Intern 
 *Duration: Mar 2023 - May 2023*
 
 - Successfully implemented a Procedural Brick Texture module into the core offline renderer
