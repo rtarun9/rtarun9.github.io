@@ -11,12 +11,14 @@ tocopen: false
 
 ### -> Graphics Software Engineer
 *Duration: Dec 2025 - Present*
-- Top secret graphics stuff
+- Optimized the BVH build pipeline, boosting performance of multiple AAA DX12 titles by 5–10%.
+- Analyzed and optimized RTPSO of several AAA games, and made game-specific changes to boost performance by 5–6%.
+- Prototyped multiple ray tracing traversal algorithms to mitigate warp divergence and maximize GPU occupancy, utilizing hardware performance counters to identify and eliminate pipeline bottlenecks.
+- Tools used: C++20, Pix, DXR (1.0 - 2.0), DX12, OpenCL
 
-
-### -> Associate Engineer 
+### -> Associate Graphics Engineer 
 *Duration: Feb 2025 - Dec 2025*
-- Top secret graphics stuff
+- Conducted thorough analysis of AAA games rendering flow and provided hardware-level suggestions for future GPU architectures.
 
 # Tally Solutions
 
@@ -34,7 +36,7 @@ tocopen: false
 previously spent on manual reporting.
 - Developed custom webhooks to enforce rules on creation and updates of pull requests.
 - Created automation scripts / Yaml pipeline templates for AWS and Azure DevOps.
-- Tools used: Python 3, Bash, Git, Bitbucket AWS, Azure DevOps, Jenkins, Docker, Linux
+- Tools used: Python 3, Bash, Git, Azure DevOps, Jenkins, Docker, Linux
 
 # MicroFacet.io
 ### -> C++ and Rendering Intern 
